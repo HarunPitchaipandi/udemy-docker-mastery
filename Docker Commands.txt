@@ -1,0 +1,261 @@
+Docker Commands:
+
+1. docker version
+- returns version of the docker client and docker engine
+
+2. docker info
+- returns details of docker containers
+
+3. docker
+- returns list of docker commands
+- returned list contains 2 lists: Management commands and normal commands
+- Management commands contains list of modularized commands like container, network, service etc
+-normal commands include build, deploy, diff, exec etc
+
+4. Run a container in the background
+- nginx: docker container run -d --name nginx1 nginx
+- mysql: docker comtainer run -d --name sqlserver1 -e MYSQL_RANDOM_PASSWORD=true mysql
+- read the mysql docker image to know bout the -e parameters needed for the sql image
+
+5. docker container top nginx1
+- returns the top processes running inside the container with name nginx1
+
+6. docker container inspect nginx1
+- Will display all the metadata about the container (startup, config, volumes, networking etc)
+
+7. docker container stats
+- shows live performance data for all containers
+
+8. docker container run -it image [command] [args]
+- the optional command is the command supplied to run inside the terminal that is started with the '-it' within the container
+- e.g:  docker container run -it --name webserver nginx bash
+- this will open a bash terminal inside a server named webserver with the image nginx
+- '-t' is the attribute to start a sudo terminal
+- '-i' is to start the terminal and keep it open
+- this kind of execution with the -run command changes the default startup command that is set for the container image
+- the startup command will be set to the command we provide, here bash to start the container using run
+- exiting the bash or the initial command will stop the container
+
+9. docker container start 
+-  will start a stopped container
+- adding '-ai' attributes will enable stdin / stdout from the container to the terminal
+
+10. docker container exec
+- Is used to run commands inside a running container
+- e.g: docker container exec -it webserver bash
+- this command will open an bash terminal inside the container named webserver
+- exiting the command will not stop the container as exec will not change the startup command of the container
+
+11. docker container run -p 8080:80 --name webserver -d nginx
+- the command will start a container with the nginx image with name webserver and will receive traffic from port 8080 on host 
+to port 80 on the container
+
+12. docker container inspect --format '{{ .NetworkSettings.IPAddress }}' webserver
+- By default, containers will be added to a docker network called bridge or docker0
+- Containers in the same network can communicate with each other over their exposed ports
+
+13. docker network ls
+- shows list of networks 
+- the default network any new container is attached to is the bridge network. 
+- the bridge network nats the traffic from docker to host enabling internet access
+- Another network present is named host, which attaches to the host network interface. It provides better performance
+while sacrificing security provided by container mode
+- Another network is named none, which is not attached to any network interface.
+
+14. docker network inspect networkname
+- inspect a network and view its metadata
+- the metadata includes the list of containers in the network
+- docker defaults the hostname of the container with the container's name.
+
+15. docker network create --driver drivername
+- create a new network with the driver drivername
+
+16. docker network connect 
+- attach a running container to the network 
+
+17. docker network disconnect
+- detach a running container from a network
+
+Persistent data
+- Example for a myqsl docker image, the persistent data is stored in a location with path, /var/lib/mysql
+- the persistent data is stored on the host in the provided path
+- in the container, the path is different and it can be seen from doing a container inspect under Mounts
+18. docker volume inspect
+- will display metadata about the volumes in the host
+
+Named volumes
+- to know if an docker image has a volume configured, look for the keyword VOLUME in the docker image.
+- to create a volume to a container use the -v attribute during creation of the container
+19. e.g: docker container run -d -e MYSQL_ALLOW_EMPTY_PASSWORD=True --name mydbserver -v /var/lib/mysql mysql
+- For an official mysql image, this is created by default. so no need to create it again manually.
+20. The volume can be named by: docker container run -d -e MYSQL_ALLOW_EMPTY_PASSWORD=True --name mydbserver -v mysql-db1:/var/lib/mysql mysql
+- mysql-db1 being the given name for the volume
+
+Bind-mounts:
+21. docker container run -d --name webserver -p 80:80 -v $(pwd):/usr/share/nginx/html nginx
+- this command creates a docker container with name webserver with port 80 on host forwarding to 80 on container, with a bindmount
+with location the current working directory on the host to the path /usr/share/nginx/html on the container
+- the files and subfolders in the path mounted to the container will also be visible in the container in the container path /usr/share/nginx/html
+
+Docker-compose
+- compose is a functionality to create and configure multiple containers in a single file
+- the compose file should contain all the items that needed for the containers
+- items include, version, services, volumes, networks
+- version is the version of the compose. minimum v2 is required
+- servicename is the name of the container cluster or service. this name will be the DNS name
+- for each service, toptional properties of the container can be defined, like image, command, environment, volumes
+- image is the image fro which the container will be created
+- command  
+
+22. docker-compose logs - view logs of running compose instances
+
+23. docker-compose build
+- command to build images as part of docker-compose for local.
+- the sample file and folder: compose-sample-3
+- for the service, create the service with service name.
+- Under the service name, the build command should be provided with the following parameters
+  - context: the working directory, the location of the dockerfile
+  - dockerfile: the name of the dockerfile
+- the build commmand first looks for any image with the specified name in cache. if not found, then
+docker proceeds to build the image
+- this can be overriden with the command docker-compose up --build or docker compose build
+- this command will always build and does not look for alreay existing images
+- docker-compose will name the containers, networks, images created within with the name of the service and the name of the folder as prefix
+to avoid naming conflicts
+
+24. docker-compose down 
+- docker compose down will not delete the images pulled for creating the services
+- to delete the images, add the attribute, docker-compose down --rmi with options:
+- 'all' will remove all images
+- 'local' will remove all local images, i.e, the ones without a custom tag
+
+docker swarm
+25. docker info - check the status of features of docker daemon in local
+- By default, swarm is disabled in docker. To enable, run the command
+
+26. docker swarm init
+- To enable swarm in local
+- this also provides the command and credentials needed to join already running containers as nodes to this swarm
+- Many background tasks get completed:
+  - Root certificate Created for the swarm
+  - Certificate gets issued to Manager node
+  - join tokens are created. Tokens that get issued to nodes that get added/created to the swarm
+  - A DB called raft DB gets created to store root CA, configs, secrets. they are also encrypted by default after docker version >= 1.13
+
+27. docker node 
+- a docker node is an instance of a docker engine, which can 
+- ls: will list the list of nodes under a swarm
+- demote: will demote a node from Manager
+- inspect: will inspect the node given
+- promote: will promote a node to Manager
+- ps: list the tasks running on one or more nodes
+- rm: remove one or more nodes from swarm
+- update: update a node
+
+28. docker service:
+- attributes include create, inspect, logs, ls, ps, rm, scale, update
+- create: creates a new service with the image provided as attribute
+- e.g: docker service create alpine ping 8.8.8.8
+- the command will output a service id 
+
+29. docker service ls
+- showing name of the service, node status, replicas and image used
+
+30. docker service ps service_name
+- lists all the containers runnning for the service name
+- the info contains name incremented with count, image and hostname, desired and
+current states of the service
+
+31. docker service update service_id --replicas 3
+- this command will update the number of replicas for the service to the number provided
+
+32. docker swarm init --advertise-addr ipaddress
+- initiate creation of a new swarm with the mentioned ip address as the host ipaddress
+
+33. `docker swarm join --token tokenstring leaderIp:port`
+- the command output also provides the connection string that should be used to add other
+nodes to the swarm
+- to add the other nodes to this swarm, just run the command received as output from the init command
+
+34. docker node ls
+- lists all the nodes that are added to this leader node.
+- this command runs only in the leader node. 
+
+35. docker node update --role manager nodename
+- this command updates the swarm to promote the node with name nodename as leader
+- a subsequent node ls, will show the manager_status of the node nodename as 'Reachable' and the original node as 
+status `Leader`
+- the manager_status as Reachable the nodes have manager privilege and have connectivity between 3 nodes.
+
+36. docker swarm join-token manager 
+- to view the join token for adding other nodes to this swarm as Leader
+
+37. docker node ps node2
+- list the list containers running in node2
+
+38. docker service ps service_name
+- the command shows list of tasks(containers) their respective hosts, the container ids, their states
+
+- the overlay network creates a swarm wide network for containers in each nodes to communicate 
+with each other
+
+39.  docker network create --driver overlay mynetwork1
+- create a network of type overlay 
+
+40. routing mesh is a functionality of swarm that ensures the serivces deployed in 1 node
+is available in all nodes in the cluster
+- the service is identified by the VIP and service name
+- routing mesh offers stateless load balancing
+- it is a OSI layer 3 type load balancer
+
+41. docker service logs servicename
+- to check logs inside individual services in a service.
+- this command is not enabled by default. to enable, add the option `{"experimental":true}` in /etc/docker/daemon.json file
+
+- post version 1.13, docker enabled compose for swarm
+- swarm accespts compose files after this version
+
+42. docker stack deploy -c compose-file-name.yml stackname
+- this will deploy the compose file with the swarm deploy.
+- the compose file version should be atleast 3
+- stack differs with regular compose in that, stack cannot run build commands and has the attribute deploy aside from 
+the version should be 3.1 or higher for stacks and secrets to work
+- the docker stack command has options ls, ps rm and services, to list stacks, to list tasks in the stack, remove and list services in their
+stack respectively
+- here, the `docker stack ls` command will output 1 stack with name as stackname and number of services it contains( here it is 6)
+- the `docker stack ps stackname` command will list the list of tasks and nodes that they are running in
+- the `docker stack services stackname` lists the services, replicas part of the stack
+
+- secrets help to hide / encrypt information that are sensitive to be written in service or compose files
+- they are stored physically in disk on manager nodes
+- they can also be used in services, they get stored in swarm and then are used from services
+
+43. docker secret create ps_user filename.txt
+- this command will create a secret wih nname ps_user from the contents of the file with name filename.txt
+
+44. echo "mypsqlpasswd" | docker secret create psql_pass - 
+- this command receives the standard input provided here with echo command as the input for the create secret command 
+
+45. docker service create --name psql --secret ps_user --secret psql_pass -e POSTGRES_PASSWORD_FILE=/run/secrets/psql_pass -e POSTGRES_USER
+_FILE=/run/secrets/ps_user postgres
+- official docker images now support supplying username and password properties via secrets. so these images will understand the parameters
+POSTGRES_PASSWORD_FILE and POSTGRES_USER_FILE
+
+- to use secrets in a stack,
+- there are 2 options available,
+  - create the secrets separately and then reference them by name under the secrets section in the compose file with external keyword
+  - e.g: 
+  secrets:
+    psql_user:
+      external: true
+  - secrets created externally will not be deleted if the stack is deleted.
+  - create the secrets in the secrets section itself
+- Also, to be noted is that, secrets can be used in stacks only in compose version 3.1 or networkname
+- secrets are scoped with each service so secrets for one service will not be accessible from another
+
+secrets in local compose:
+- secrets will also work in local compose although the security feautures will not be available.
+- compose will blindly bind-mount the secret files to the containers.
+e.g: secrets-sample-2
+- need compose version 11 or greater for this to work
+- in local, secrets will work only with the file based secrets and not the external
