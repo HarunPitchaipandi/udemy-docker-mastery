@@ -259,3 +259,55 @@ secrets in local compose:
 e.g: secrets-sample-2
 - need compose version 11 or greater for this to work
 - in local, secrets will work only with the file based secrets and not the external
+
+46. To have a full CI lifecycle with multiple environments with docker-compose, docker provides a functionality where in we can define
+multiple docker compose files with the name format
+check in folder: swarm-stach-3
+- docker-compose.yml 
+  - provides the common docker resource definitions for all environments
+  - Here it contains the image info for the 2 services defined - drupal and postgres
+- docker-compose.override.yml
+  - provides the default file to add config definitions to the base file
+  - say, if the command just `docker-compose up` is run:
+    - the base file with the definitions from docker-compose.override.yml will ve combined and executed
+  - to add definitions from other non-prod environment files, run the commands in the following manner,
+    - docker-compose -f docker-compose.yml -f docker-compose.test.yml up -d
+- for prod, since docker-compose is not suggested or secure, the execution should be,.
+    - docker-compose -f docker-compose.yml -f docker-compose.prod.yml config > output.yml
+- the execution command should always be: base file first, env specific command next followed by
+config and output( > ) to another file name
+
+docker service updates
+47. docker service update --image nyapp:1.2.1 servicename 
+    - this command updates the image version of the service with he image version given
+  - docker service update --env-add NODE_ENV=production --publish-rm 8080 servicename
+    - command to make 2 updates to the service
+  - docker service scale web=8 api=6
+    - command to update replicas for 2 services
+  - docker service update --force servicename
+    - with no parameters given to the update command, docker swarm will rebalance the traffic or work
+    to the services. This is helpful when adding additional tasks for a service.
+
+48. docker stack deploy -c file.yml filename
+- docker stacks have no update command. the only way to update is to make changes in the same yml file
+and deploy the file again
+
+docker healthcheck
+- basic health check feature for docker to check if the container is running.
+- works with swarm, stacks, containers compose from version 1.12
+- it basically runs a exec command from inside the container.
+- Has 3 statuses; starting, 0 (healthy), 1 (unhealthy)
+-
+49. docker container ls
+  - shows a container health status
+  - docker run command takes no actions if the status returns a 1
+  - docker service will replace the unhealthy tasks
+
+50. docker run \
+    --health-cmd="curl -f localhost:9200/_cluster/health || false" \
+    --health-interval=5s \
+    --health-retries=3 \
+    --health-timeout=2s \
+    --health-start-period=15s \
+    elasticsearch:2
+
